@@ -13,7 +13,7 @@ import logging_tree
 
 
 class Application:
-    '''__^__description__^__
+    '''main application class
     '''
 
     def __init__(self, logger, args):
@@ -25,7 +25,7 @@ class Application:
         self.logger = logger
         self.args = args
 
-    def __^__themethod__^__(self):
+    def run(self):
         self.logger.info("hello world")
         self.logger.debug("hello world debug")
         raise Exception("Testing Exception")
@@ -44,8 +44,8 @@ if __name__ == "__main__":
     # if we are being run as a real program
 
     parser = argparse.ArgumentParser(
-        description="__^__description__^__",
-        epilog="Copyright @date - Mark Grandi")
+        description="downloads each problem from leetcode into individual files",
+        epilog="Copyright 2019-09-10 Mark Grandi")
 
     # set up logging stuff
     logging.captureWarnings(True) # capture warnings with the logging infrastructure
@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
         # run the application
         app = Application(root_logger.getChild("app"), parsed_args)
-        app.__^__themethod__^__()
+        app.run()
 
         root_logger.info("Done!")
     except Exception as e:
