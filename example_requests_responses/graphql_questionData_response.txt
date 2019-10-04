@@ -1,0 +1,123 @@
+{
+    "data": {
+        "question": {
+            "questionId": "733",
+            "questionFrontendId": "733",
+            "boundTopicId": null,
+            "title": "Flood Fill",
+            "titleSlug": "flood-fill",
+            "content": "<p>\r\nAn <code>image</code> is represented by a 2-D array of integers, each integer representing the pixel value of the image (from 0 to 65535).\r\n</p><p>\r\nGiven a coordinate <code>(sr, sc)</code> representing the starting pixel (row and column) of the flood fill, and a pixel value <code>newColor</code>, \"flood fill\" the image.\r\n</p><p>\r\nTo perform a \"flood fill\", consider the starting pixel, plus any pixels connected 4-directionally to the starting pixel of the same color as the starting pixel, plus any pixels connected 4-directionally to those pixels (also with the same color as the starting pixel), and so on.  Replace the color of all of the aforementioned pixels with the newColor.\r\n</p><p>\r\nAt the end, return the modified image.\r\n</p>\r\n<p><b>Example 1:</b><br />\r\n<pre>\r\n<b>Input:</b> \r\nimage = [[1,1,1],[1,1,0],[1,0,1]]\r\nsr = 1, sc = 1, newColor = 2\r\n<b>Output:</b> [[2,2,2],[2,2,0],[2,0,1]]\r\n<b>Explanation:</b> \r\nFrom the center of the image (with position (sr, sc) = (1, 1)), all pixels connected \r\nby a path of the same color as the starting pixel are colored with the new color.\r\nNote the bottom corner is not colored 2, because it is not 4-directionally connected\r\nto the starting pixel.\r\n</pre>\r\n</p>\r\n\r\n<p><b>Note:</b>\r\n<li>The length of <code>image</code> and <code>image[0]</code> will be in the range <code>[1, 50]</code>.</li>\r\n<li>The given starting pixel will satisfy <code>0 <= sr < image.length</code> and <code>0 <= sc < image[0].length</code>.</li>\r\n<li>The value of each color in <code>image[i][j]</code> and <code>newColor</code> will be an integer in <code>[0, 65535]</code>.</li>\r\n</p>",
+            "translatedTitle": null,
+            "translatedContent": null,
+            "isPaidOnly": false,
+            "difficulty": "Easy",
+            "likes": 529,
+            "dislikes": 121,
+            "isLiked": null,
+            "similarQuestions": "[{\"title\": \"Island Perimeter\", \"titleSlug\": \"island-perimeter\", \"difficulty\": \"Easy\", \"translatedTitle\": null}]",
+            "contributors": [{
+                "username": "jatermelon",
+                "profileUrl": "/jatermelon/",
+                "avatarUrl": "https://assets.leetcode.com/users/jatermelon/avatar.png",
+                "__typename": "ContributorNode"
+            }],
+            "langToValidPlayground": "{\"cpp\": false, \"java\": true, \"python\": true, \"python3\": false, \"mysql\": false, \"mssql\": false, \"oraclesql\": false, \"c\": false, \"csharp\": false, \"javascript\": false, \"ruby\": false, \"bash\": false, \"swift\": false, \"golang\": false, \"scala\": false, \"html\": false, \"pythonml\": false, \"kotlin\": false, \"rust\": false, \"php\": false}",
+            "topicTags": [{
+                "name": "Depth-first Search",
+                "slug": "depth-first-search",
+                "translatedName": null,
+                "__typename": "TopicTagNode"
+            }],
+            "companyTagStats": null,
+            "codeSnippets": [{
+                "lang": "C++",
+                "langSlug": "cpp",
+                "code": "class Solution {\npublic:\n    vector<vector<int>> floodFill(vector<vector<int>>& image, int sr, int sc, int newColor) {\n        \n    }\n};",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "Java",
+                "langSlug": "java",
+                "code": "class Solution {\n    public int[][] floodFill(int[][] image, int sr, int sc, int newColor) {\n        \n    }\n}",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "Python",
+                "langSlug": "python",
+                "code": "class Solution(object):\n    def floodFill(self, image, sr, sc, newColor):\n        \"\"\"\n        :type image: List[List[int]]\n        :type sr: int\n        :type sc: int\n        :type newColor: int\n        :rtype: List[List[int]]\n        \"\"\"\n        ",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "Python3",
+                "langSlug": "python3",
+                "code": "class Solution:\n    def floodFill(self, image: List[List[int]], sr: int, sc: int, newColor: int) -> List[List[int]]:\n        ",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "C",
+                "langSlug": "c",
+                "code": "\n\n/**\n * Return an array of arrays of size *returnSize.\n * The sizes of the arrays are returned as *returnColumnSizes array.\n * Note: Both returned array and *columnSizes array must be malloced, assume caller calls free().\n */\nint** floodFill(int** image, int imageSize, int* imageColSize, int sr, int sc, int newColor, int* returnSize, int** returnColumnSizes){\n\n}\n\n",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "C#",
+                "langSlug": "csharp",
+                "code": "public class Solution {\n    public int[][] FloodFill(int[][] image, int sr, int sc, int newColor) {\n        \n    }\n}",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "JavaScript",
+                "langSlug": "javascript",
+                "code": "/**\n * @param {number[][]} image\n * @param {number} sr\n * @param {number} sc\n * @param {number} newColor\n * @return {number[][]}\n */\nvar floodFill = function(image, sr, sc, newColor) {\n    \n};",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "Ruby",
+                "langSlug": "ruby",
+                "code": "# @param {Integer[][]} image\n# @param {Integer} sr\n# @param {Integer} sc\n# @param {Integer} new_color\n# @return {Integer[][]}\ndef flood_fill(image, sr, sc, new_color)\n    \nend",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "Swift",
+                "langSlug": "swift",
+                "code": "class Solution {\n    func floodFill(_ image: [[Int]], _ sr: Int, _ sc: Int, _ newColor: Int) -> [[Int]] {\n        \n    }\n}",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "Go",
+                "langSlug": "golang",
+                "code": "func floodFill(image [][]int, sr int, sc int, newColor int) [][]int {\n    \n}",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "Scala",
+                "langSlug": "scala",
+                "code": "object Solution {\n    def floodFill(image: Array[Array[Int]], sr: Int, sc: Int, newColor: Int): Array[Array[Int]] = {\n        \n    }\n}",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "Kotlin",
+                "langSlug": "kotlin",
+                "code": "class Solution {\n    fun floodFill(image: Array<IntArray>, sr: Int, sc: Int, newColor: Int): Array<IntArray> {\n        \n    }\n}",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "Rust",
+                "langSlug": "rust",
+                "code": "impl Solution {\n    pub fn flood_fill(image: Vec<Vec<i32>>, sr: i32, sc: i32, new_color: i32) -> Vec<Vec<i32>> {\n        \n    }\n}",
+                "__typename": "CodeSnippetNode"
+            }, {
+                "lang": "PHP",
+                "langSlug": "php",
+                "code": "class Solution {\n\n    /**\n     * @param Integer[][] $image\n     * @param Integer $sr\n     * @param Integer $sc\n     * @param Integer $newColor\n     * @return Integer[][]\n     */\n    function floodFill($image, $sr, $sc, $newColor) {\n        \n    }\n}",
+                "__typename": "CodeSnippetNode"
+            }],
+            "stats": "{\"totalAccepted\": \"60.5K\", \"totalSubmission\": \"116.9K\", \"totalAcceptedRaw\": 60452, \"totalSubmissionRaw\": 116874, \"acRate\": \"51.7%\"}",
+            "hints": ["Write a recursive function that paints the pixel if it's the correct color, then recurses on neighboring pixels."],
+            "solution": {
+                "id": "307",
+                "canSeeDetail": true,
+                "__typename": "ArticleNode"
+            },
+            "status": null,
+            "sampleTestCase": "[[1,1,1],[1,1,0],[1,0,1]]\n1\n1\n2",
+            "metaData": "{\r\n  \"name\": \"floodFill\",\r\n  \"params\": [\r\n    {\r\n      \"name\": \"image\",\r\n      \"type\": \"integer[][]\"\r\n    },\r\n    {\r\n      \"name\": \"sr\",\r\n      \"type\": \"integer\"\r\n    },\r\n    {\r\n      \"name\": \"sc\",\r\n      \"type\": \"integer\"\r\n    },\r\n    {\r\n      \"name\": \"newColor\",\r\n      \"type\": \"integer\"\r\n    }\r\n  ],\r\n  \"return\": {\r\n    \"type\": \"integer[][]\"\r\n  }\r\n}\r\n",
+            "judgerAvailable": true,
+            "judgeType": "large",
+            "mysqlSchemas": [],
+            "enableRunCode": true,
+            "enableTestMode": false,
+            "envInfo": "{\"cpp\": [\"C++\", \"<p>Compiled with <code>g++ 8.2</code> using the latest C++ 17 standard.</p>\\r\\n\\r\\n<p>Your code is compiled with level one optimization (<code>-O1</code>). <a href=\\\"https://github.com/google/sanitizers/wiki/AddressSanitizer\\\" target=\\\"_blank\\\">AddressSanitizer</a> is also enabled to help detect out-of-bounds and use-after-free bugs.</p>\\r\\n\\r\\n<p>Most standard library headers are already included automatically for your convenience.</p>\"], \"java\": [\"Java\", \"<p>Compiled with <code>java 1.8.0</code> taking advantage of the latest Java 8 features such as lambda expressions and stream API.</p>\\n\\n<p>Most standard library headers are already included automatically for your convenience.</p>\"], \"python\": [\"Python\", \"<p>Compiled with <code>python 2.7.12</code>.</p>\\n\\n<p>Most libraries are already imported automatically for your convenience, such as <a href=\\\"https://docs.python.org/2/library/array.html\\\" target=\\\"_blank\\\">array</a>, <a href=\\\"https://docs.python.org/2/library/bisect.html\\\" target=\\\"_blank\\\">bisect</a>, <a href=\\\"https://docs.python.org/2/library/collections.html\\\" target=\\\"_blank\\\">collections</a>. If you need more libraries, you can import it yourself.</p>\\n\\n<p>Note that Python 2.7 <a href=\\\"https://www.python.org/dev/peps/pep-0373/\\\" target=\\\"_blank\\\">will not be maintained past 2020</a>. For the latest Python, please choose Python3 instead.</p>\"], \"c\": [\"C\", \"<p>Compiled with <code>gcc 8.2</code> using the gnu99 standard.</p>\\r\\n\\r\\n<p>Your code is compiled with level one optimization (<code>-O1</code>). <a href=\\\"https://github.com/google/sanitizers/wiki/AddressSanitizer\\\" target=\\\"_blank\\\">AddressSanitizer</a> is also enabled to help detect out-of-bounds and use-after-free bugs.</p>\\r\\n\\r\\n<p>Most standard library headers are already included automatically for your convenience.</p>\\r\\n\\r\\n<p>For hash table operations, you may use <a href=\\\"https://troydhanson.github.io/uthash/\\\" target=\\\"_blank\\\">uthash</a>. \\\"uthash.h\\\" is included by default. Below are some examples:</p>\\r\\n\\r\\n<p><b>1. Adding an item to a hash.</b>\\r\\n<pre>\\r\\nstruct hash_entry {\\r\\n    int id;            /* we'll use this field as the key */\\r\\n    char name[10];\\r\\n    UT_hash_handle hh; /* makes this structure hashable */\\r\\n};\\r\\n\\r\\nstruct hash_entry *users = NULL;\\r\\n\\r\\nvoid add_user(struct hash_entry *s) {\\r\\n    HASH_ADD_INT(users, id, s);\\r\\n}\\r\\n</pre>\\r\\n</p>\\r\\n\\r\\n<p><b>2. Looking up an item in a hash:</b>\\r\\n<pre>\\r\\nstruct hash_entry *find_user(int user_id) {\\r\\n    struct hash_entry *s;\\r\\n    HASH_FIND_INT(users, &user_id, s);\\r\\n    return s;\\r\\n}\\r\\n</pre>\\r\\n</p>\\r\\n\\r\\n<p><b>3. Deleting an item in a hash:</b>\\r\\n<pre>\\r\\nvoid delete_user(struct hash_entry *user) {\\r\\n    HASH_DEL(users, user);  \\r\\n}\\r\\n</pre>\\r\\n</p>\"], \"csharp\": [\"C#\", \"<p>Compiled with <code>mono 5.18.0</code> providing <a href=\\\"https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-7\\\" target=\\\"_blank\\\">full support for C# 7</a>.</p>\\r\\n\\r\\n<p>Your code is compiled with debug flag enabled (<code>/debug</code>).</p>\"], \"javascript\": [\"JavaScript\", \"<p>Run with <code>nodejs 10.15.0</code>.</p>\\r\\n\\r\\n<p>Your code is run with <code>--harmony</code> flag, enabling <a href=\\\"http://node.green/\\\" target=\\\"_blank\\\">new ES6 features</a>.</p>\\r\\n\\r\\n<p><a href=\\\"https://lodash.com\\\" target=\\\"_blank\\\">lodash.js</a> library is included by default.</p>\"], \"ruby\": [\"Ruby\", \"<p>Run with <code>ruby 2.4.5</code>.</p>\"], \"swift\": [\"Swift\", \"<p>Compiled with <code>swift 5.0.1</code>.</p>\\r\\n\\r\\n<p>We usually keep up with the <a href=\\\"https://swift.org/download/\\\" target=\\\"_blank\\\">latest Swift released by Apple</a>, if not please let us know and we will update it as soon as possible!</p>\"], \"golang\": [\"Go\", \"<p>Compiled with <code>go 1.11.4</code>.</p>\"], \"python3\": [\"Python3\", \"<p>Run with <code>python 3.6</code>.</p>\\n\\n<p>Most libraries are already imported automatically for your convenience, such as <a href=\\\"https://docs.python.org/3/library/array.html\\\" target=\\\"_blank\\\">array</a>, <a href=\\\"https://docs.python.org/3/library/bisect.html\\\" target=\\\"_blank\\\">bisect</a>, <a href=\\\"https://docs.python.org/3/library/collections.html\\\" target=\\\"_blank\\\">collections</a>. If you need more libraries, you can import it yourself.</p>\"], \"scala\": [\"Scala\", \"<p>Compiled with <code>scala 2.11.12</code>.</p>\"], \"kotlin\": [\"Kotlin\", \"<p>Compiled with <code>kotlin 1.3.10</code>.</p>\"], \"rust\": [\"Rust\", \"<p>Compiled with <code>rust 1.31.0 (edition = 2018)</code></p>\\r\\n\\r\\n<p>Supports <a href=\\\"https://crates.io/crates/rand\\\" target=\\\"_blank\\\">rand</a>\\u00a0from crates.io</p>\"], \"php\": [\"PHP\", \"<p>Run with <code>PHP 7.2</code>.</p>\"]}",
+            "libraryUrl": null,
+            "__typename": "QuestionNode"
+        }
+    }
+}
