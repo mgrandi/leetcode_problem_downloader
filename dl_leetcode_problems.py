@@ -6,12 +6,14 @@ import logging
 import sys
 import argparse
 import pathlib
+import typing
 
 # third party imports
 import arrow
 import attr
 import requests
 import logging_tree
+import html2text
 
 
 __version__ = "1.0.0"
@@ -21,10 +23,47 @@ USER_AGENT_STRING = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20
 class UrlRequest:
     method:str = attr.ib()
     url:str = attr.ib()
-    query:str = attr.ib(default=None)
-    body:dict = attr.ib(default=None)
-    headers:dict = attr.ib(default=None)
+    query:str = attr.ib(default=None) # optional
+    body:dict = attr.ib(default=None) # optional
+    headers:dict = attr.ib(default=None) # optional
     response:requests.Response = attr.ib(default=None) # gets set after the request is processed
+
+@attr.s(auto_attribs=True)
+class SingleLeetcodeProblemCodeSnippet:
+    ''' represents the code snippet that gets filled in when
+    you start the problem on the leetcode editor for a given language
+
+    this information comes from the `graphql (questionData)` endpoint
+    '''
+
+    language:str = attr.ib()
+    language_slug:str = attr.ib()
+    code_snippet:str = attr.ib()
+
+
+@attr.s(auto_attribs=True)
+class SingleLeetcodeProblem:
+    ''' represents a single problem from leetcode
+
+    fields are a combination of information returned from the `/api/problems/all`
+    and the `graphql (questionData)` endpoints
+
+    '''
+
+    question_id:int = attr.ib()
+    title:str = attr.ib()
+    slug:str = attr.ib()
+    difficulty:int = attr.ib()
+    paid_only:bool = attr.ib()
+    question_content:str = attr.ib()
+    code_snippets:typing.Mapping[str, SingleLeetcodeProblemCodeSnippet] = attr.ib()
+
+
+@attr.s(auto_attribs=True)
+class AllLeetcodeProblems:
+    problems:typing.Mapping[int,SingleLeetcodeProblem] = attr.ib()
+
+
 
 class Application:
     '''main application class
@@ -42,6 +81,10 @@ class Application:
         self.rsession = requests.session()
 
         self.rsession.headers.update({'User-Agent': USER_AGENT_STRING})
+
+        self.text_converter = html2text.HTML2Text()
+        self.text_converter.unicode_snob = True
+        self.text_converter.mark_code = True
 
 
     def make_requests_call(self, request_to_make:UrlRequest) -> UrlRequest:
