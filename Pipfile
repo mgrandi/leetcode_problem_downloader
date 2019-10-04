@@ -10,6 +10,7 @@ requests = "*"
 logging-tree = "*"
 attrs = "*"
 arrow = "*"
+html2text = "*"
 
 [requires]
 python_version = "3.7"
