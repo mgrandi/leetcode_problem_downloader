@@ -14,10 +14,20 @@ import attr
 import requests
 import logging_tree
 import html2text
+import jmespath
 
 
 __version__ = "1.0.0"
 USER_AGENT_STRING = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0"
+JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY = jmespath.compile("stat_status_pairs")
+
+JMESPATH_Q_QUESTION_ID = jmespath.compile("stat.question_id")
+JMESPATH_Q_TITLE = jmespath.compile("stat.question__title")
+JMESPATH_Q_SLUG = jmespath.compile("stat.question__title_slug")
+JMESPATH_Q_DIFFICULTY = jmespath.compile("difficulty.level")
+JMESPATH_Q_PAID_ONLY = jmespath.compile("paid_only")
+
+
 
 @attr.s(auto_attribs=True)
 class UrlRequest:
@@ -55,14 +65,13 @@ class SingleLeetcodeProblem:
     slug:str = attr.ib()
     difficulty:int = attr.ib()
     paid_only:bool = attr.ib()
-    question_content:str = attr.ib()
-    code_snippets:typing.Mapping[str, SingleLeetcodeProblemCodeSnippet] = attr.ib()
+    question_content:str = attr.ib(default=None)
+    code_snippets:typing.Mapping[str, SingleLeetcodeProblemCodeSnippet] = attr.ib(default=None)
 
 
 @attr.s(auto_attribs=True)
 class AllLeetcodeProblems:
     problems:typing.Mapping[int,SingleLeetcodeProblem] = attr.ib()
-
 
 
 class Application:
@@ -111,6 +120,74 @@ class Application:
 
         return attr.evolve(request_to_make, response=result)
 
+    def jmespath_search_helper(self, jmespath_compiled_query, dict_to_search, description):
+        '''
+        helper that runs a jmespath search and raises an exception if we get None back
+
+        @param dict_to_search the dictionary to search using .search()
+        @param jmespath_compiled_query the query object to call search on
+        @param description a string that gets inserted into the log message
+        @return the result of the .search() call or throws an exception
+        '''
+
+        self.logger.debug("using jmespath compiled query `%s` to search, description: `%s`",
+         jmespath_compiled_query, description)
+
+        jmespath_search_result = jmespath_compiled_query.search(dict_to_search)
+
+        self.logger.debug("jmespath compiled query `%s` returned an object of type `%s`",
+            JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY, type(jmespath_search_result))
+
+        if jmespath_search_result == None:
+            raise Exception(
+                f"jmespath compiled search `{jmespath_compiled_query}` (`{description}`) returned None")
+
+        return jmespath_search_result
+
+
+    def parse_api_problems_all_response(self, response_dict:dict) -> AllLeetcodeProblems:
+        '''
+        parses the response from leetcode.com/api/problems/all , which is the list of problems
+        and some basic stuff about them, but not the actual probelms themselves
+
+        '''
+
+        result_dict = dict()
+
+        try:
+
+            problems_list_result = self.jmespath_search_helper(
+                JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY, response_dict, "problems list")
+
+            self.logger.info("have `%s` questions to parse", len(problems_list_result))
+
+            # go through each question in the list (after sorting by question id) and then parse them into
+            # a SingleLeetcodeProblem object
+            for iter_problem_dict in sorted(problems_list_result, key=lambda x: JMESPATH_Q_QUESTION_ID.search(x)):
+
+                single_q = SingleLeetcodeProblem(
+                    question_id = self.jmespath_search_helper(JMESPATH_Q_QUESTION_ID, iter_problem_dict, "single question -> question_id"),
+                    title = self.jmespath_search_helper(JMESPATH_Q_TITLE, iter_problem_dict, "single question -> title"),
+                    slug = self.jmespath_search_helper(JMESPATH_Q_SLUG, iter_problem_dict, "single question -> slug"),
+                    difficulty = self.jmespath_search_helper(JMESPATH_Q_DIFFICULTY, iter_problem_dict, "single question -> difficulty"),
+                    paid_only = self.jmespath_search_helper(JMESPATH_Q_PAID_ONLY, iter_problem_dict, "single question -> paid only"),
+                    question_content = None,
+                    code_snippets = None)
+
+                result_dict[single_q.question_id] = single_q
+                self.logger.info("Question `%s` - `%s` parsed successfully", single_q.question_id, single_q.title)
+
+
+        except Exception as e:
+            self.logger.exception("Problem when parsing the /api/problems/all api response")
+            raise e
+
+
+        self.logger.info("`%s` questions parsed successfully", len(problems_list_result))
+        return result_dict
+
+
+
     def run(self):
 
         common_headers = {"Host": "leetcode.com",
@@ -145,13 +222,19 @@ class Application:
         self.logger.debug("login page req: `%s`", login_page_req)
 
 
-        problems_set_all_req = self.make_requests_call(UrlRequest(method="GET", url="https://leetcode.com/api/problems/all",
+        problems_set_all_req = self.make_requests_call(
+            UrlRequest(method="GET", url="https://leetcode.com/api/problems/all",
          headers=common_headers))
 
-        import pdb; pdb.set_trace()
-        self.logger.debug("problem set all req: `%s`", problems_set_all_req)
+        parsed_questions_dict = self.parse_api_problems_all_response(problems_set_all_req.response.json())
 
-        self.logger.debug("text: `%s`", problems_set_all_req.response.text)
+        import pprint
+        self.logger.debug("questions: `%s`", pprint.pformat(parsed_questions_dict))
+
+        # import pdb; pdb.set_trace()
+        # self.logger.debug("problem set all req: `%s`", problems_set_all_req)
+
+        # self.logger.debug("text: `%s`", problems_set_all_req.response.text)
 
 
 class ArrowLoggingFormatter(logging.Formatter):
