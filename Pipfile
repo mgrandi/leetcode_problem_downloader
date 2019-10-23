@@ -11,6 +11,7 @@ logging-tree = "*"
 attrs = "*"
 arrow = "*"
 html2text = "*"
+jmespath = "*"
 
 [requires]
 python_version = "3.7"
