@@ -2,6 +2,8 @@
 
     "version": 1,
 
+    "disable_existing_loggers": false,
+
     "formatters": {
 
         "arrow": {
@@ -48,4 +50,6 @@
         "level": "DEBUG",
         "handlers": ["console", "default_handler"]
     }
+
+
 }
