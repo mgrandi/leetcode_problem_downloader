@@ -17,11 +17,15 @@ import jmespath
 from leetcode_dl.model import SingleLeetcodeProblemCodeSnippet, SingleLeetcodeProblem, AllLeetcodeProblems, UrlRequest
 from leetcode_dl import constants
 
-class Application:
+
+logger = logging.getLogger(__name__)
+jmespath_logger = logger.getChild("jmespath")
+
+class LeetcodeProblemDownloader:
     '''main application class
     '''
 
-    def __init__(self, logger:logging.Logger, args:argparse.Namespace):
+    def __init__(self, args:argparse.Namespace):
         ''' constructor
         @param logger the Logger instance
         @param args - the namespace object we get from argparse.parse_args()
@@ -80,12 +84,12 @@ class Application:
         @return the result of the .search() call or throws an exception
         '''
 
-        self.logger.debug("using jmespath compiled query `%s` to search, description: `%s`",
+        jmespath_logger.debug("using jmespath compiled query `%s` to search, description: `%s`",
          jmespath_compiled_query, description)
 
         jmespath_search_result = jmespath_compiled_query.search(dict_to_search)
 
-        self.logger.debug("jmespath compiled query `%s` returned an object of type `%s`",
+        jmespath_logger.debug("jmespath compiled query `%s` returned an object of type `%s`",
             constants.JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY, type(jmespath_search_result))
 
         if jmespath_search_result == None:
@@ -302,8 +306,7 @@ class Application:
         return AllLeetcodeProblems(problems=result_dict)
 
 
-    def run(self):
-
+    def get_all_leetcode_problems(self) -> AllLeetcodeProblems:
 
 
         home_page_urlrequest = self.make_homepage_request()
@@ -317,13 +320,11 @@ class Application:
 
         problem_set_all_urlrequest = self.make_api_problems_all_request()
 
+        # get the problems without the question content and the code snippets
         all_leetcode_problems = self.parse_api_problems_all_response(problem_set_all_urlrequest.response.json())
 
-        import pprint
-        self.logger.debug("questions: `%s`", pprint.pformat(all_leetcode_problems.problems))
-
+        # update the problems with the question content and the code snippets
         all_leetcode_problems = self.update_leetcode_problems_with_content_and_snippets(
             csrf_token_from_cookie, all_leetcode_problems)
 
-        import pprint
-        self.logger.debug("questions: `%s`", pprint.pformat(all_leetcode_problems.problems))
+        return all_leetcode_problems

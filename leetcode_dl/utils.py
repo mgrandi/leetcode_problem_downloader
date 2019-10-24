@@ -1,9 +1,12 @@
 import argparse
 import pathlib
 import logging
+import typing
 import pathlib
 
 import arrow
+
+from leetcode_dl import constants
 
 class ArrowLoggingFormatter(logging.Formatter):
     ''' logging.Formatter subclass that uses arrow, that formats the timestamp
@@ -53,3 +56,19 @@ def isFileType(filePath):
         raise argparse.ArgumentTypeError("The path `{}` is not a file!".format(path_resolved))
 
     return path_resolved
+
+
+def get_choices_for_programming_language() -> typing.List[str]:
+    ''' returns the possible choices for a programming language that we support
+    (aka leetcode supports)
+
+    also includes a special value called 'all'
+
+    @return a list of strings
+    '''
+
+    # convert to a list because we don't want to pass around a view
+    tmp = list(constants.KNOWN_LANGUAGE_SLUG_TO_FILE_EXT_DICT.keys())
+    tmp.append(constants.PROGRAMMING_LANGUAGE_CHOICE_ALL)
+    return tmp
+
