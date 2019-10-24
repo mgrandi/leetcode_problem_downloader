@@ -14,105 +14,8 @@ import logging_tree
 import html2text
 import jmespath
 
-
-SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS = 5
-
-USER_AGENT_STRING = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0"
-
-JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY = jmespath.compile("stat_status_pairs")
-
-JMESPATH_Q_QUESTION_ID = jmespath.compile("stat.question_id")
-JMESPATH_Q_TITLE = jmespath.compile("stat.question__title")
-JMESPATH_Q_SLUG = jmespath.compile("stat.question__title_slug")
-JMESPATH_Q_DIFFICULTY = jmespath.compile("difficulty.level")
-JMESPATH_Q_PAID_ONLY = jmespath.compile("paid_only")
-
-JMESPATH_Q_CONTENT = jmespath.compile("data.question.content")
-JMESPATH_Q_CODE_SNIPPETS = jmespath.compile("data.question.codeSnippets")
-
-JMESPATH_Q_CODE_SNIPPET_LANGUAGE = jmespath.compile("lang")
-JMESPATH_Q_CODE_SNIPPET_LANGUAGE_SLUG = jmespath.compile("langSlug")
-JMESPATH_Q_CODE_SNIPPET_CONTENT = jmespath.compile("code")
-
-GRAPHQL_QUESTIONDATA_QUERY = '''query questionData($titleSlug: String!) {
-  question(titleSlug: $titleSlug) {
-    questionId
-    questionFrontendId
-    boundTopicId
-    title
-    titleSlug
-    content
-    codeSnippets {
-      lang
-      langSlug
-      code
-      __typename
-    }
-  }
-}
-
-'''
-
-COMMON_HEADERS = {"Host": "leetcode.com",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
-     # their server supports 'brotli' so if you put 'br' in here you get back binary
-     # instead of JSON text
-    "Accept-Encoding": "gzip, deflate",
-    "DNT": "1",
-    "Connection": "keep-alive",
-    "Referer": "https://leetcode.com/",
-    "Upgrade-Insecure-Requests": "1",
-    "Pragma": "no-cache",
-    "Cache-Control": "no-cache",
-    "TE": "Trailers"}
-
-
-@attr.s(auto_attribs=True)
-class UrlRequest:
-    method:str = attr.ib()
-    url:str = attr.ib()
-    query:str = attr.ib(default=None) # optional
-    body:dict = attr.ib(default=None) # optional
-    body_is_json:bool = attr.ib(default=False)
-    headers:dict = attr.ib(default=None) # optional
-    response:requests.Response = attr.ib(default=None) # gets set after the request is processed
-
-@attr.s(auto_attribs=True)
-class SingleLeetcodeProblemCodeSnippet:
-    ''' represents the code snippet that gets filled in when
-    you start the problem on the leetcode editor for a given language
-
-    this information comes from the `graphql (questionData)` endpoint
-    '''
-
-    language:str = attr.ib()
-    language_slug:str = attr.ib()
-    code_snippet:str = attr.ib()
-
-
-@attr.s(auto_attribs=True)
-class SingleLeetcodeProblem:
-    ''' represents a single problem from leetcode
-
-    fields are a combination of information returned from the `/api/problems/all`
-    and the `graphql (questionData)` endpoints
-
-    '''
-
-    question_id:int = attr.ib()
-    title:str = attr.ib()
-    slug:str = attr.ib()
-    difficulty:int = attr.ib()
-    paid_only:bool = attr.ib()
-    question_content:str = attr.ib(default=None)
-    code_snippets:typing.Mapping[str, SingleLeetcodeProblemCodeSnippet] = attr.ib(default=None)
-
-
-@attr.s(auto_attribs=True)
-class AllLeetcodeProblems:
-    problems:typing.Mapping[int,SingleLeetcodeProblem] = attr.ib()
-
+from leetcode_dl.model import SingleLeetcodeProblemCodeSnippet, SingleLeetcodeProblem, AllLeetcodeProblems, UrlRequest
+from leetcode_dl import constants
 
 class Application:
     '''main application class
@@ -129,7 +32,7 @@ class Application:
 
         self.rsession = requests.session()
 
-        self.rsession.headers.update({'User-Agent': USER_AGENT_STRING})
+        self.rsession.headers.update({'User-Agent': constants.USER_AGENT_STRING})
 
         self.text_converter = html2text.HTML2Text()
         self.text_converter.unicode_snob = True
@@ -183,7 +86,7 @@ class Application:
         jmespath_search_result = jmespath_compiled_query.search(dict_to_search)
 
         self.logger.debug("jmespath compiled query `%s` returned an object of type `%s`",
-            JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY, type(jmespath_search_result))
+            constants.JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY, type(jmespath_search_result))
 
         if jmespath_search_result == None:
             raise Exception(
@@ -206,20 +109,25 @@ class Application:
         try:
 
             problems_list_result = self.jmespath_search_helper(
-                JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY, response_dict, "problems list")
+                constants.JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY, response_dict, "problems list")
 
             self.logger.info("have `%s` questions to parse", len(problems_list_result))
 
             # go through each question in the list (after sorting by question id) and then parse them into
             # a SingleLeetcodeProblem object
-            for iter_problem_dict in sorted(problems_list_result, key=lambda x: JMESPATH_Q_QUESTION_ID.search(x)):
+            for iter_problem_dict in sorted(problems_list_result, key=lambda x: constants.JMESPATH_Q_QUESTION_ID.search(x)):
 
                 single_q = SingleLeetcodeProblem(
-                    question_id = self.jmespath_search_helper(JMESPATH_Q_QUESTION_ID, iter_problem_dict, "single question -> question_id"),
-                    title = self.jmespath_search_helper(JMESPATH_Q_TITLE, iter_problem_dict, "single question -> title"),
-                    slug = self.jmespath_search_helper(JMESPATH_Q_SLUG, iter_problem_dict, "single question -> slug"),
-                    difficulty = self.jmespath_search_helper(JMESPATH_Q_DIFFICULTY, iter_problem_dict, "single question -> difficulty"),
-                    paid_only = self.jmespath_search_helper(JMESPATH_Q_PAID_ONLY, iter_problem_dict, "single question -> paid only"),
+                    question_id = self.jmespath_search_helper(constants.JMESPATH_Q_QUESTION_ID, iter_problem_dict,
+                        "single question -> question_id"),
+                    title = self.jmespath_search_helper(constants.JMESPATH_Q_TITLE, iter_problem_dict,
+                        "single question -> title"),
+                    slug = self.jmespath_search_helper(constants.JMESPATH_Q_SLUG, iter_problem_dict,
+                        "single question -> slug"),
+                    difficulty = self.jmespath_search_helper(constants.JMESPATH_Q_DIFFICULTY, iter_problem_dict,
+                        "single question -> difficulty"),
+                    paid_only = self.jmespath_search_helper(constants.JMESPATH_Q_PAID_ONLY, iter_problem_dict,
+                        "single question -> paid only"),
                     question_content = None,
                     code_snippets = None)
 
@@ -277,7 +185,7 @@ class Application:
             UrlRequest(method="POST",
                 url="https://leetcode.com/accounts/login",
                 body=login_body_dict,
-                headers=COMMON_HEADERS))
+                headers=constants.COMMON_HEADERS))
 
         return login_page_response_req
 
@@ -289,7 +197,7 @@ class Application:
 
         problems_set_all_req = self.make_requests_call(
             UrlRequest(method="GET", url="https://leetcode.com/api/problems/all",
-         headers=COMMON_HEADERS))
+         headers=constants.COMMON_HEADERS))
 
         return problems_set_all_req
 
@@ -308,10 +216,11 @@ class Application:
             "variables": {
                 "titleSlug": leetcode_question.slug
             },
-            "query": GRAPHQL_QUESTIONDATA_QUERY
+            "query": constants.GRAPHQL_QUESTIONDATA_QUERY
         }
 
-        headers = COMMON_HEADERS.copy()
+        # don't modify the constant value
+        headers = constants.COMMON_HEADERS.copy()
 
         headers["x-csrftoken"] = csrf_token
         headers["Content-Type"] = "application/json"
@@ -353,25 +262,29 @@ class Application:
 
             res_json_dict = graphql_response_req.response.json()
 
-            question_html = self.jmespath_search_helper(JMESPATH_Q_CONTENT, res_json_dict, "question data -> content")
+            question_html = self.jmespath_search_helper(constants.JMESPATH_Q_CONTENT, res_json_dict,
+                "question data -> content")
             question_as_markdown = self.text_converter.handle(question_html)
-            question_code_snippets = self.jmespath_search_helper(JMESPATH_Q_CODE_SNIPPETS, res_json_dict, "question data -> code snippets")
+            question_code_snippets = self.jmespath_search_helper(constants.JMESPATH_Q_CODE_SNIPPETS, res_json_dict,
+                "question data -> code snippets")
 
-            self.logger.debug("have `%s` snippets to process for Question `%s` - `%s`", len(question_code_snippets), question_idx, iter_single_lc_question.title)
+            self.logger.debug("have `%s` snippets to process for Question `%s` - `%s`",
+                len(question_code_snippets), question_idx, iter_single_lc_question.title)
 
             code_snippet_dict = dict()
 
             for iter_code_snippet_dict in question_code_snippets:
 
                 code_snippet_obj = SingleLeetcodeProblemCodeSnippet(
-                    language = self.jmespath_search_helper(JMESPATH_Q_CODE_SNIPPET_LANGUAGE,
-                     iter_code_snippet_dict, "question data -> code snippet -> language"),
-                    language_slug = self.jmespath_search_helper(JMESPATH_Q_CODE_SNIPPET_LANGUAGE_SLUG,
-                     iter_code_snippet_dict, "question data -> code snippet -> language slug"),
-                    code_snippet = self.jmespath_search_helper(JMESPATH_Q_CODE_SNIPPET_CONTENT,
-                     iter_code_snippet_dict, "question data -> code snippet -> code"))
+                    language = self.jmespath_search_helper(constants.JMESPATH_Q_CODE_SNIPPET_LANGUAGE,
+                        iter_code_snippet_dict, "question data -> code snippet -> language"),
+                    language_slug = self.jmespath_search_helper(constants.JMESPATH_Q_CODE_SNIPPET_LANGUAGE_SLUG,
+                        iter_code_snippet_dict, "question data -> code snippet -> language slug"),
+                    code_snippet = self.jmespath_search_helper(constants.JMESPATH_Q_CODE_SNIPPET_CONTENT,
+                        iter_code_snippet_dict, "question data -> code snippet -> code"))
 
-                self.logger.debug("new code snippet obj for Question `%s` - `%s`: `%s`", question_idx, iter_single_lc_question.title, code_snippet_obj)
+                self.logger.debug("new code snippet obj for Question `%s` - `%s`: `%s`",
+                    question_idx, iter_single_lc_question.title, code_snippet_obj)
 
                 code_snippet_dict[code_snippet_obj.language_slug] = code_snippet_obj
 
@@ -382,8 +295,8 @@ class Application:
 
             result_dict[new_single_lc_problem.question_id] = new_single_lc_problem
 
-            self.logger.debug("sleeping for `%s` seconds...", SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS)
-            time.sleep(SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS)
+            self.logger.debug("sleeping for `%s` seconds...", constants.SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS)
+            time.sleep(constants.SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS)
 
 
         return AllLeetcodeProblems(problems=result_dict)
