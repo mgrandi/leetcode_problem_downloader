@@ -7,6 +7,7 @@ import sys
 import argparse
 import pathlib
 import typing
+import json
 
 # third party imports
 import arrow
@@ -28,6 +29,39 @@ JMESPATH_Q_DIFFICULTY = jmespath.compile("difficulty.level")
 JMESPATH_Q_PAID_ONLY = jmespath.compile("paid_only")
 
 
+GRAPHQL_QUESTIONDATA_QUERY = '''query questionData($titleSlug: String!) {
+  question(titleSlug: $titleSlug) {
+    questionId
+    questionFrontendId
+    boundTopicId
+    title
+    titleSlug
+    content
+    codeSnippets {
+      lang
+      langSlug
+      code
+      __typename
+    }
+  }
+}
+
+'''
+
+COMMON_HEADERS = {"Host": "leetcode.com",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+     # their server supports 'brotli' so if you put 'br' in here you get back binary
+     # instead of JSON text
+    "Accept-Encoding": "gzip, deflate",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Referer": "https://leetcode.com/",
+    "Upgrade-Insecure-Requests": "1",
+    "Pragma": "no-cache",
+    "Cache-Control": "no-cache",
+    "TE": "Trailers"}
+
 
 @attr.s(auto_attribs=True)
 class UrlRequest:
@@ -35,6 +69,7 @@ class UrlRequest:
     url:str = attr.ib()
     query:str = attr.ib(default=None) # optional
     body:dict = attr.ib(default=None) # optional
+    body_is_json:bool = attr.ib(default=False)
     headers:dict = attr.ib(default=None) # optional
     response:requests.Response = attr.ib(default=None) # gets set after the request is processed
 
@@ -101,12 +136,19 @@ class Application:
         result = None
         try:
             self.logger.debug("http request: %s - %s", request_to_make.method, request_to_make.url)
+
+            actual_body = request_to_make.body
+
+            # easier to just manually convert to json here rather than copying and pasting the session.request call
+            # with a different body= or json= parameter
+            if request_to_make.body_is_json:
+                actual_body = json.dumps(request_to_make.body)
             result = self.rsession.request(
                 method=request_to_make.method,
                 url=request_to_make.url,
                 headers=request_to_make.headers,
                 params=request_to_make.query,
-                data=request_to_make.body)
+                data=actual_body)
 
 
         except requests.RequestException as e:
@@ -116,7 +158,7 @@ class Application:
         self.logger.debug("http request: %s - %s -> %s", request_to_make.method, request_to_make.url, result.status_code)
 
         if result.status_code != 200:
-            raise Exception(f"Request returned non 200 status code `{result.status_code}` with the request `{request_to_make}`")
+            raise Exception(f"Request returned non 200 status code `{result.status_code}` with the request `{request_to_make}`, and cookies: `{self.rsession.cookies}`, and text: `{result.text}`, raw: `{result.request.body}`")
 
         return attr.evolve(request_to_make, response=result)
 
@@ -150,6 +192,8 @@ class Application:
         parses the response from leetcode.com/api/problems/all , which is the list of problems
         and some basic stuff about them, but not the actual probelms themselves
 
+        @param response_dict the dictionary we get from the web request that contains the problems
+        @return a AllLeetcodeProblems object
         '''
 
         result_dict = dict()
@@ -182,54 +226,154 @@ class Application:
             self.logger.exception("Problem when parsing the /api/problems/all api response")
             raise e
 
-
         self.logger.info("`%s` questions parsed successfully", len(problems_list_result))
-        return result_dict
+        return AllLeetcodeProblems(problems=result_dict)
+
+
+    def make_homepage_request(self) -> UrlRequest:
+        '''
+        makes the http request for the leetcode homepage
+
+        @return the resulting UrlRequest
+        '''
+
+        # hit the home page
+        home_page_response_req = self.make_requests_call(UrlRequest(method="GET", url="https://leetcode.com"))
+
+        return home_page_response_req
+
+
+    def get_csrf_token_from_cookiejar(self) -> str:
+        '''
+        returns the CSRF token from the cookie jar
+        @return the CSRF token as a string
+        '''
+
+        csrf_token_from_cookie = self.rsession.cookies["csrftoken"]
+
+        self.logger.debug("csrf middleware token from the cookie jar is `%s`", csrf_token_from_cookie)
+        return csrf_token_from_cookie
+
+
+    def make_login_page_request(self, csrf_token) -> UrlRequest:
+        '''
+        makes the HTTP request to login to leetcode
+
+        @param csrf_token the CSRF token we got from the homepage request
+        @return the resulting UrlRequest
+        '''
+
+        login_body_dict = {"login": self.args.username,
+            "password": self.args.password,
+            "next": "/problems",
+            "csrfmiddlewaretoken": csrf_token }
+
+        login_page_response_req = self.make_requests_call(
+            UrlRequest(method="POST",
+                url="https://leetcode.com/accounts/login",
+                body=login_body_dict,
+                headers=COMMON_HEADERS))
+
+        return login_page_response_req
+
+    def make_api_problems_all_request(self) -> UrlRequest:
+        '''
+        makes the HTTP request to hit the /api/problems/all API
+        @return the resulting UrlRequest
+        '''
+
+        problems_set_all_req = self.make_requests_call(
+            UrlRequest(method="GET", url="https://leetcode.com/api/problems/all",
+         headers=COMMON_HEADERS))
+
+        return problems_set_all_req
+
+
+    def make_graphql_questiondata_query(self, csrf_token, leetcode_question:SingleLeetcodeProblem) -> UrlRequest:
+        '''
+        method to make a HTTP request to get the 'extended' information about a individual leetcode question
+
+        @param leetcode_question the SingleLeetcodeProblem object that we want the extended info for
+        @param csrf_token the CSRF token we got from the home page request
+        @return the resulting UrlRequest
+        '''
+
+        question_data_body_dict = {
+            "operationName": "questionData",
+            "variables": {
+                "titleSlug": leetcode_question.slug
+            },
+            "query": GRAPHQL_QUESTIONDATA_QUERY
+        }
+
+        headers = COMMON_HEADERS.copy()
+
+        headers["x-csrftoken"] = csrf_token
+        headers["Content-Type"] = "application/json"
+        headers["Referer"] = f"https://leetcode.com/problems/{leetcode_question.slug}"
+
+        graphql_req = UrlRequest(
+            method="POST",
+            url="https://leetcode.com/graphql",
+            body=question_data_body_dict,
+            body_is_json=True,
+            headers=headers)
+
+        graphql_response_req = self.make_requests_call(graphql_req)
+
+        return graphql_response_req
+
+
+    def update_leetcode_problems_with_content_and_snippets(self, csrf_token, all_problems:AllLeetcodeProblems) -> AllLeetcodeProblems:
+        '''
+        goes through all of our leetcode problems and update the SingleLeetcodeProblem instances
+        with the question content and the code snippet information
+
+        @param all_problems the AllLeetcodeProblems instance we have
+        @param csrf_token the CSRF token we got from the homepage request
+        @return an updated AllLeetcodeProblems instance with the members having the question content
+            and code snippets updated
+        '''
+
+        # not good form to modify the dict while iterating over it so lets just create
+        # a new dict to insert the updated entries into
+        result_dict = dict()
+
+        for question_idx, iter_single_lc_question in all_problems.problems.items():
+
+
+            self.logger.info("Updating Question `%s` - `%s`", question_idx, iter_single_lc_question.title)
+
+            graphql_response_req = self.make_graphql_questiondata_query(csrf_token, iter_single_lc_question)
+
 
 
 
     def run(self):
 
-        common_headers = {"Host": "leetcode.com",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.5",
-             # their server supports 'brotli' so if you put 'br' in here you get back binary
-             # instead of JSON text
-            "Accept-Encoding": "gzip, deflate",
-            "DNT": "1",
-            "Connection": "keep-alive",
-            "Referer": "https://leetcode.com/",
-            "Upgrade-Insecure-Requests": "1",
-            "Pragma": "no-cache",
-            "Cache-Control": "no-cache",
-            "TE": "Trailers"}
-
-        # hit the home page
-        home_page_req = self.make_requests_call(UrlRequest(method="GET", url="https://leetcode.com"))
-
-        csrf_token_from_cookie = home_page_req.response.cookies["csrftoken"]
-
-        self.logger.debug("csrf middleware token from homepage request is `%s`", csrf_token_from_cookie)
-
-        login_body_dict = {"login": self.args.username,
-            "password": self.args.password,
-            "next": "/problems",
-            "csrfmiddlewaretoken": csrf_token_from_cookie }
-
-        login_page_req = self.make_requests_call(
-            UrlRequest(method="POST", url="https://leetcode.com/accounts/login", body=login_body_dict, headers=common_headers))
-
-        self.logger.debug("login page req: `%s`", login_page_req)
 
 
-        problems_set_all_req = self.make_requests_call(
-            UrlRequest(method="GET", url="https://leetcode.com/api/problems/all",
-         headers=common_headers))
+        home_page_urlrequest = self.make_homepage_request()
 
-        parsed_questions_dict = self.parse_api_problems_all_response(problems_set_all_req.response.json())
+        csrf_token_from_cookie = self.get_csrf_token_from_cookiejar()
 
-        import pprint
-        self.logger.debug("questions: `%s`", pprint.pformat(parsed_questions_dict))
+        login_page_urlrequest = self.make_login_page_request(csrf_token_from_cookie)
+
+        # logging in updates the csrf token
+        csrf_token_from_cookie = self.get_csrf_token_from_cookiejar()
+
+
+        problem_set_all_urlrequest = self.make_api_problems_all_request()
+
+        all_leetcode_problems = self.parse_api_problems_all_response(problem_set_all_urlrequest.response.json())
+
+        all_leetcode_problems = self.update_leetcode_problems_with_content_and_snippets(
+            csrf_token_from_cookie, all_leetcode_problems)
+
+
+
+        # import pprint
+        # self.logger.debug("questions: `%s`", pprint.pformat(all_leetcode_problems.problems))
 
         # import pdb; pdb.set_trace()
         # self.logger.debug("problem set all req: `%s`", problems_set_all_req)
