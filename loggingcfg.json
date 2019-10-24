@@ -1,0 +1,51 @@
+{
+
+    "version": 1,
+
+    "formatters": {
+
+        "arrow": {
+
+            "()": "leetcode_dl.utils.ArrowLoggingFormatter",
+            "fmt": "%(asctime)s %(threadName)-10s %(name)-10s %(levelname)-8s: %(message)s"
+        }
+    },
+
+    "handlers": {
+
+        "default_handler": {
+
+            "class": "logging.FileHandler",
+            "formatter": "arrow",
+            "level": "DEBUG",
+            "filters": [],
+
+            "filename": "C:/Users/auror/Temp/dl_leetcode_problems.log",
+            "mode": "a",
+            "encoding": "utf-8"
+        },
+
+        "console": {
+
+            "class": "logging.StreamHandler",
+            "formatter": "arrow",
+            "level": "INFO",
+            "filters": [],
+
+            "stream": "ext://sys.stdout"
+
+        }
+
+    },
+
+    "loggers": {
+
+
+    },
+
+    "root": {
+
+        "level": "DEBUG",
+        "handlers": ["console", "default_handler"]
+    }
+}
