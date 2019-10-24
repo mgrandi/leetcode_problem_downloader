@@ -3,6 +3,7 @@
 # library imports
 import argparse
 import logging
+import logging.config
 import sys
 import argparse
 import pathlib
@@ -408,7 +409,6 @@ class Application:
         # logging in updates the csrf token
         csrf_token_from_cookie = self.get_csrf_token_from_cookiejar()
 
-
         problem_set_all_urlrequest = self.make_api_problems_all_request()
 
         all_leetcode_problems = self.parse_api_problems_all_response(problem_set_all_urlrequest.response.json())
@@ -449,6 +449,27 @@ def isDirectoryType(stringArg):
 
     return path
 
+def isFileType(filePath):
+    ''' see if the file path given to us by argparse is a file
+    @param filePath - the filepath we get from argparse
+    @return the filepath as a pathlib.Path() if it is a file, else we raise a ArgumentTypeError'''
+
+    path_maybe = pathlib.Path(filePath)
+    path_resolved = None
+
+    # try and resolve the path
+    try:
+        path_resolved = path_maybe.resolve(strict=True)
+
+    except Exception as e:
+        raise argparse.ArgumentTypeError("Failed to parse `{}` as a path: `{}`".format(filePath, e))
+
+    # double check to see if its a file
+    if not path_resolved.is_file():
+        raise argparse.ArgumentTypeError("The path `{}` is not a file!".format(path_resolved))
+
+    return path_resolved
+
 if __name__ == "__main__":
     # if we are being run as a real program
 
@@ -483,9 +504,11 @@ if __name__ == "__main__":
     parser.add_argument("path_to_save_to", metavar="path-to-save-to",
         type=isDirectoryType, help="the path to download the problems to")
     parser.add_argument("--version", action="version", help="show the program version", version=__version__)
-    parser.add_argument("--verbose", action="store_true", help="Increase logging verbosity")
 
+    group = parser.add_mutually_exclusive_group()
 
+    group.add_argument("--verbose", action="store_true", help="Increase logging verbosity")
+    group.add_argument("--logging-config", dest="logging_config", type=isFileType, help="Specify a JSON file representing logging configuration")
 
     try:
         parsed_args = parser.parse_args()
@@ -494,7 +517,11 @@ if __name__ == "__main__":
         if parsed_args.verbose:
             root_logger.setLevel("DEBUG")
         else:
-            root_logger.setLevel("INFO")
+            if parsed_args.logging_config:
+                with open(parsed_args.logging_config, "r", encoding="utf-8") as f:
+                    logging.config.dictConfig(json.load(f))
+            else:
+                root_logger.setLevel("INFO")
 
         root_logger.debug("Parsed arguments: %s", parsed_args)
         root_logger.debug("Logger hierarchy:\n%s", logging_tree.format.build_description(node=None))
