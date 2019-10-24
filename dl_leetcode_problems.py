@@ -8,6 +8,7 @@ import argparse
 import pathlib
 import typing
 import json
+import time
 
 # third party imports
 import arrow
@@ -19,7 +20,11 @@ import jmespath
 
 
 __version__ = "1.0.0"
+
+SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS = 5
+
 USER_AGENT_STRING = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0"
+
 JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY = jmespath.compile("stat_status_pairs")
 
 JMESPATH_Q_QUESTION_ID = jmespath.compile("stat.question_id")
@@ -28,6 +33,12 @@ JMESPATH_Q_SLUG = jmespath.compile("stat.question__title_slug")
 JMESPATH_Q_DIFFICULTY = jmespath.compile("difficulty.level")
 JMESPATH_Q_PAID_ONLY = jmespath.compile("paid_only")
 
+JMESPATH_Q_CONTENT = jmespath.compile("data.question.content")
+JMESPATH_Q_CODE_SNIPPETS = jmespath.compile("data.question.codeSnippets")
+
+JMESPATH_Q_CODE_SNIPPET_LANGUAGE = jmespath.compile("lang")
+JMESPATH_Q_CODE_SNIPPET_LANGUAGE_SLUG = jmespath.compile("langSlug")
+JMESPATH_Q_CODE_SNIPPET_CONTENT = jmespath.compile("code")
 
 GRAPHQL_QUESTIONDATA_QUERY = '''query questionData($titleSlug: String!) {
   question(titleSlug: $titleSlug) {
@@ -346,7 +357,42 @@ class Application:
 
             graphql_response_req = self.make_graphql_questiondata_query(csrf_token, iter_single_lc_question)
 
+            res_json_dict = graphql_response_req.response.json()
 
+            question_html = self.jmespath_search_helper(JMESPATH_Q_CONTENT, res_json_dict, "question data -> content")
+            question_as_markdown = self.text_converter.handle(question_html)
+            question_code_snippets = self.jmespath_search_helper(JMESPATH_Q_CODE_SNIPPETS, res_json_dict, "question data -> code snippets")
+
+            self.logger.debug("have `%s` snippets to process for Question `%s` - `%s`", len(question_code_snippets), question_idx, iter_single_lc_question.title)
+
+            code_snippet_dict = dict()
+
+            for iter_code_snippet_dict in question_code_snippets:
+
+                code_snippet_obj = SingleLeetcodeProblemCodeSnippet(
+                    language = self.jmespath_search_helper(JMESPATH_Q_CODE_SNIPPET_LANGUAGE,
+                     iter_code_snippet_dict, "question data -> code snippet -> language"),
+                    language_slug = self.jmespath_search_helper(JMESPATH_Q_CODE_SNIPPET_LANGUAGE_SLUG,
+                     iter_code_snippet_dict, "question data -> code snippet -> language slug"),
+                    code_snippet = self.jmespath_search_helper(JMESPATH_Q_CODE_SNIPPET_CONTENT,
+                     iter_code_snippet_dict, "question data -> code snippet -> code"))
+
+                self.logger.debug("new code snippet obj for Question `%s` - `%s`: `%s`", question_idx, iter_single_lc_question.title, code_snippet_obj)
+
+                code_snippet_dict[code_snippet_obj.language_slug] = code_snippet_obj
+
+            # now evolve the SingleLeetcodeProblem and put it in the new dict
+            new_single_lc_problem = attr.evolve(iter_single_lc_question,
+                question_content=question_as_markdown,
+                code_snippets=code_snippet_dict)
+
+            result_dict[new_single_lc_problem.question_id] = new_single_lc_problem
+
+            self.logger.debug("sleeping for `%s` seconds...", SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS)
+            time.sleep(SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS)
+
+
+        return AllLeetcodeProblems(problems=result_dict)
 
 
     def run(self):
@@ -367,18 +413,15 @@ class Application:
 
         all_leetcode_problems = self.parse_api_problems_all_response(problem_set_all_urlrequest.response.json())
 
+        import pprint
+        self.logger.debug("questions: `%s`", pprint.pformat(all_leetcode_problems.problems))
+
         all_leetcode_problems = self.update_leetcode_problems_with_content_and_snippets(
             csrf_token_from_cookie, all_leetcode_problems)
 
+        import pprint
+        self.logger.debug("questions: `%s`", pprint.pformat(all_leetcode_problems.problems))
 
-
-        # import pprint
-        # self.logger.debug("questions: `%s`", pprint.pformat(all_leetcode_problems.problems))
-
-        # import pdb; pdb.set_trace()
-        # self.logger.debug("problem set all req: `%s`", problems_set_all_req)
-
-        # self.logger.debug("text: `%s`", problems_set_all_req.response.text)
 
 
 class ArrowLoggingFormatter(logging.Formatter):
@@ -421,6 +464,12 @@ if __name__ == "__main__":
     logging_handler = logging.StreamHandler(sys.stdout)
     logging_handler.setFormatter(logging_formatter)
     root_logger.addHandler(logging_handler)
+
+    # ## TEMPORARYS
+    # logging_handler.setLevel("INFO")
+    # filehandler = logging.FileHandler("C:/Users/auror/Code/Personal/leetcode_downloader/log.txt", mode='a', encoding="utf-8", delay=False)
+    # filehandler.setFormatter(logging_formatter)
+    # root_logger.addHandler(filehandler)
 
 
     # silence urllib3 (requests) logger because its noisy
