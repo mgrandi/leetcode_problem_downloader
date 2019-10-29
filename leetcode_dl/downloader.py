@@ -130,13 +130,16 @@ class LeetcodeProblemDownloader:
             # a SingleLeetcodeProblem object
             for iter_problem_dict in sorted(problems_list_result, key=lambda x: constants.JMESPATH_Q_QUESTION_ID.search(x)):
 
+
+                # NOTE: we get rid of any extra spaces that might be at the end for title and slug, as some of them
+                # have trailing spaces which causes problem we we save the problem to disk
                 single_q = SingleLeetcodeProblem(
                     question_id = self.jmespath_search_helper(constants.JMESPATH_Q_QUESTION_ID, iter_problem_dict,
                         "single question -> question_id"),
                     title = self.jmespath_search_helper(constants.JMESPATH_Q_TITLE, iter_problem_dict,
-                        "single question -> title"),
+                        "single question -> title").strip(),
                     slug = self.jmespath_search_helper(constants.JMESPATH_Q_SLUG, iter_problem_dict,
-                        "single question -> slug"),
+                        "single question -> slug").strip(),
                     difficulty = self.jmespath_search_helper(constants.JMESPATH_Q_DIFFICULTY, iter_problem_dict,
                         "single question -> difficulty"),
                     paid_only = self.jmespath_search_helper(constants.JMESPATH_Q_PAID_ONLY, iter_problem_dict,

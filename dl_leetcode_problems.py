@@ -69,10 +69,10 @@ def run(parsed_args, root_logger):
             # so if the user has requested a language but leetcode didn't give it to us, log a warning
             if code_snippet_obj == None:
 
-                nfe = ErrorWhenWritingSourceCodeFile(
+                nfe = model.ErrorWhenWritingSourceCodeFile(
                     problem_obj=iter_single_lc_problem,
                     language_slug = iter_programming_lang_str,
-                    reason=f"Leetcode did not give us a code snippet for the specified language, they only had `{iter_single_lc_problem.get_available_code_snippets}`")
+                    reason=f"Leetcode did not give us a code snippet for the specified language, they only had `{iter_single_lc_problem.get_available_code_snippets()}`")
                 non_fatal_error_list.append(nfe)
                 logger.warning("Problem writing source code file for problem `%s` - `%s`, reason: `%s`",
                      iter_single_lc_problem.question_id, iter_single_lc_problem.title, nfe.reason)
