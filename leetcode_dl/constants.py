@@ -4,6 +4,9 @@ import jmespath
 
 SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS = 2
 
+REQUESTS_RETRY_LIMIT = 3
+REQUESTS_SECONDS_TO_SLEEP_AFTER_FAILURE = 5
+
 USER_AGENT_STRING = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0"
 
 # jmespath expresson for getting out the question list in the api/problems/all API

@@ -45,34 +45,49 @@ class LeetcodeProblemDownloader:
 
     def make_requests_call(self, request_to_make:UrlRequest) -> UrlRequest:
 
-        result = None
-        try:
-            self.logger.debug("http request: %s - %s", request_to_make.method, request_to_make.url)
 
-            actual_body = request_to_make.body
+        exception_list = []
+        for iter_try in range(constants.REQUESTS_RETRY_LIMIT):
+            result = None
 
-            # easier to just manually convert to json here rather than copying and pasting the session.request call
-            # with a different body= or json= parameter
-            if request_to_make.body_is_json:
-                actual_body = json.dumps(request_to_make.body)
-            result = self.rsession.request(
-                method=request_to_make.method,
-                url=request_to_make.url,
-                headers=request_to_make.headers,
-                params=request_to_make.query,
-                data=actual_body)
+            try:
+                self.logger.debug("http request (try `%s`): %s - %s", iter_try, request_to_make.method, request_to_make.url)
+
+                actual_body = request_to_make.body
+
+                # easier to just manually convert to json here rather than copying and pasting the session.request call
+                # with a different body= or json= parameter
+                if request_to_make.body_is_json:
+                    actual_body = json.dumps(request_to_make.body)
+                result = self.rsession.request(
+                    method=request_to_make.method,
+                    url=request_to_make.url,
+                    headers=request_to_make.headers,
+                    params=request_to_make.query,
+                    data=actual_body)
 
 
-        except requests.RequestException as e:
-            self.logger.exception(f"Error processing request: `{request_to_make}`")
-            raise e
+            except requests.RequestException as e:
+                # add the exception and try again
+                self.logger.exception(f"Error processing request (try `{iter_try}`): `{request_to_make}`")
+                exception_list.append(e)
+                time.sleep(constants.REQUESTS_SECONDS_TO_SLEEP_AFTER_FAILURE)
+                continue
 
-        self.logger.debug("http request: %s - %s -> %s", request_to_make.method, request_to_make.url, result.status_code)
+            self.logger.debug("http request (try `%s`): %s - %s -> %s",
+                iter_try, request_to_make.method, request_to_make.url, result.status_code)
 
-        if result.status_code != 200:
-            raise Exception(f"Request returned non 200 status code `{result.status_code}` with the request `{request_to_make}`, and cookies: `{self.rsession.cookies}`, and text: `{result.text}`, raw: `{result.request.body}`")
+            if result.status_code != 200:
+                e = Exception(f"(try {iter_try}) Request returned non 200 status code `{result.status_code}` with the request `{request_to_make}`, and cookies: `{self.rsession.cookies}`, and text: `{result.text}`, raw: `{result.request.body}`")
+                exception_list.append(e)
+                time.sleep(constants.REQUESTS_SECONDS_TO_SLEEP_AFTER_FAILURE)
+                continue
+            else:
+                return attr.evolve(request_to_make, response=result)
 
-        return attr.evolve(request_to_make, response=result)
+        self.logger.error("reached retry limit of `%s`, caught exceptions: `%s`", constants.REQUESTS_RETRY_LIMIT, exception_list)
+        raise Exception(f"retry limit reached ({constants.REQUESTS_RETRY_LIMIT} and all failed: `{exception_list}`")
+
 
     def jmespath_search_helper(self, jmespath_compiled_query, dict_to_search, description):
         '''
