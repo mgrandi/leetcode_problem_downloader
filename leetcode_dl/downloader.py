@@ -84,13 +84,7 @@ class LeetcodeProblemDownloader:
         @return the result of the .search() call or throws an exception
         '''
 
-        jmespath_logger.debug("using jmespath compiled query `%s` to search, description: `%s`",
-         jmespath_compiled_query, description)
-
         jmespath_search_result = jmespath_compiled_query.search(dict_to_search)
-
-        jmespath_logger.debug("jmespath compiled query `%s` returned an object of type `%s`",
-            constants.JMESPATH_API_PROBLEMS_ALL_SEARCH_QUERY, type(jmespath_search_result))
 
         if jmespath_search_result == None:
             raise Exception(
@@ -136,7 +130,7 @@ class LeetcodeProblemDownloader:
                     code_snippets = None)
 
                 result_dict[single_q.question_id] = single_q
-                self.logger.info("Question `%s` - `%s` parsed successfully", single_q.question_id, single_q.title)
+                self.logger.debug("Question `%s` - `%s` parsed successfully", single_q.question_id, single_q.title)
 
 
         except Exception as e:

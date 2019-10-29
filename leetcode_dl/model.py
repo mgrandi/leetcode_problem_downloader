@@ -98,7 +98,26 @@ class SingleLeetcodeProblem:
                 + "but we don't have a code snippet for that language", language_slug)
             return None
 
+    def get_available_code_snippets(self) -> typing.List[str]:
+        ''' returns what code snippet languages we have as a list
+
+        @return a list of code snippet language slug strings
+        '''
+
+        return list(self.code_snippets.keys())
+
 
 @attr.s(auto_attribs=True)
 class AllLeetcodeProblems:
     problems:typing.Mapping[int,SingleLeetcodeProblem] = attr.ib()
+
+@attr.s(auto_attribs=True)
+class ErrorWhenWritingSourceCodeFile:
+    ''' holds information about a non fatal error we encountered
+    when going through each problem to write the question content + code snippet
+    to the source code file
+    '''
+
+    problem_obj:SingleLeetcodeProblem = attr.ib()
+    language_slug:str = attr.ib()
+    reason:str = attr.ib()
