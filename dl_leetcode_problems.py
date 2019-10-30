@@ -49,7 +49,7 @@ def run(parsed_args, root_logger):
 
         # handle invalid character paths
         tmp_title = iter_single_lc_problem.title
-        escaped_title = constants.INVALID_FILEPATH_CHARACTER_REPLACEMENT_REGEX.sub("_")
+        escaped_title = constants.INVALID_FILEPATH_CHARACTER_REPLACEMENT_REGEX.sub("_", tmp_title)
         if tmp_title != escaped_title:
             logger.debug("escaped invalid path characters in original title `%s` to be `%s`", tmp_title, escaped_title)
 
