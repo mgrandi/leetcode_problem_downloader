@@ -47,8 +47,13 @@ def run(parsed_args, root_logger):
     for iter_question_idx, iter_single_lc_problem in all_leetcode_problems.problems.items():
         logger.debug("writing problem `%s` - `%s`", iter_single_lc_problem.question_id, iter_single_lc_problem.title)
 
-        # the title's LOOK like they should be safe, might have to edit this if this turns out to not be the case
-        problem_folder = parsed_args.path_to_save_to / f"{iter_single_lc_problem.question_id} - {iter_single_lc_problem.title}"
+        # handle invalid character paths
+        tmp_title = iter_single_lc_problem.title
+        escaped_title = constants.INVALID_FILEPATH_CHARACTER_REPLACEMENT_REGEX.sub("_")
+        if tmp_title != escaped_title:
+            logger.debug("escaped invalid path characters in original title `%s` to be `%s`", tmp_title, escaped_title)
+
+        problem_folder = parsed_args.path_to_save_to / f"{iter_single_lc_problem.question_id} - {escaped_title}"
 
         logger.debug("-- creating problem folder: `%s`", problem_folder)
 

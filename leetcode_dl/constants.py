@@ -2,7 +2,9 @@ import leetcode_dl.model as model
 
 import jmespath
 
-SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS = 2
+import re
+
+SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS = 0.5
 
 REQUESTS_RETRY_LIMIT = 3
 REQUESTS_SECONDS_TO_SLEEP_AFTER_FAILURE = 5
@@ -26,6 +28,11 @@ JMESPATH_Q_CODE_SNIPPETS = jmespath.compile("data.question.codeSnippets")
 JMESPATH_Q_CODE_SNIPPET_LANGUAGE = jmespath.compile("lang")
 JMESPATH_Q_CODE_SNIPPET_LANGUAGE_SLUG = jmespath.compile("langSlug")
 JMESPATH_Q_CODE_SNIPPET_CONTENT = jmespath.compile("code")
+
+# https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file?redirectedfrom=MSDN#file-and-directory-names
+INVALID_FILEPATH_CHARACTER_LIST = ["<", ">", ":", '"', "/", "\\", "|", "?", "*"]
+_invalid_filepath_character_list_joined = "".join(INVALID_FILEPATH_CHARACTER_LIST)
+INVALID_FILEPATH_CHARACTER_REPLACEMENT_REGEX = re.compile(f"[{re.escape(_invalid_filepath_character_list_joined)}]+")
 
 # if you have the JSON for a "graphql questionData" response, you can figure out
 # what code snippets for each language are by using this `jq` query:
