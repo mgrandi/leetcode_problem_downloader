@@ -4,6 +4,8 @@ import jmespath
 
 import re
 
+LEETCODE_PROBLEM_URL_MINUS_SLUG_END_SLASH = "https://leetcode.com/problems/"
+
 SECONDS_TO_SLEEP_BETWEEN_GRAPHQL_API_REQUESTS = 0.5
 
 REQUESTS_RETRY_LIMIT = 3

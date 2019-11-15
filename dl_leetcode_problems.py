@@ -95,11 +95,19 @@ def run(parsed_args, root_logger):
             # open the file
             with open(iter_problem_file, "w", encoding="utf-8") as f:
 
-                # write the problem questions in comments first
+                # write the problem title and url
+                iter_problem_url = f"{constants.LEETCODE_PROBLEM_URL_MINUS_SLUG_END_SLASH}{iter_single_lc_problem.slug}"
+                f.write(f"{code_snippet_obj.get_code_snippet_comment_characters()} {iter_single_lc_problem.title}\n")
+                f.write(f"{code_snippet_obj.get_code_snippet_comment_characters()} {iter_problem_url}\n")
+                f.write(f"{code_snippet_obj.get_code_snippet_comment_characters()}\n")
+
+                # write the problem questions in comments
                 question_io = io.StringIO(iter_single_lc_problem.question_content)
                 logger.debug("------ question content: `%s`", iter_single_lc_problem.question_content.encode("utf-8"))
 
+
                 while (iter_question_line := question_io.readline()):
+
                     str_to_write = f"{code_snippet_obj.get_code_snippet_comment_characters()} {iter_question_line}"
 
                     # the question content seems to have a mix of newlines and newlines + carriage returns, so
